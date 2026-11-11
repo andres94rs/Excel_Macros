@@ -1,2 +1,63 @@
-Macro para normalizar muestras en el excel de muestras (SP):
+Código de Macro para normalizar muestras en el excel de muestras (SP):
 
+Sub Normalizada()
+
+Dim wsRegistro As Worksheet
+Dim wsNormalizada As Worksheet
+
+Dim UltFila As Long
+Dim FilaDestino As Long
+
+Dim i As Long
+Dim n As Long
+
+Dim Valor As String
+Dim Analisis As String
+
+    Set wsRegistro = Sheets("Registro")
+    Set wsNormalizada = Sheets("Normalizada")
+    
+    Application.ScreenUpdating = False
+    
+    wsNormalizada.Cells.Clear
+    
+    wsNormalizada.Range("A1:E1").Value = _
+    Array("Fecha", "Hora", "SP", "Analisis", "Valor")
+    
+    UltFila = wsRegistro.Cells(wsRegistro.Rows.Count, "A").End(xlUp).Row
+    
+    FilaDestino = 2
+    
+    For i = 3 To UltFila
+    
+    For n = 0 To 4
+    
+    Valor = Trim(CStr(wsRegistro.Cells(i, 4 + n).Value))
+    Analisis = Trim(CStr(wsRegistro.Cells(i, 9 + n).Value))
+    
+    If Valor <> "" _
+    And Valor <> "-" _
+    And Analisis <> "" _
+    And Analisis <> "-" Then
+    
+    wsNormalizada.Cells(FilaDestino, 1).Value = wsRegistro.Cells(i, 1).Value
+    wsNormalizada.Cells(FilaDestino, 2).Value = wsRegistro.Cells(i, 2).Value
+    wsNormalizada.Cells(FilaDestino, 3).Value = wsRegistro.Cells(i, 3).Value
+    wsNormalizada.Cells(FilaDestino, 4).Value = Analisis
+    wsNormalizada.Cells(FilaDestino, 5).Value = Valor
+    
+    FilaDestino = FilaDestino + 1
+    
+    End If
+    
+    Next n
+    
+    Next i
+    
+    wsNormalizada.Columns.AutoFit
+    
+    Application.ScreenUpdating = True
+    
+    MsgBox FilaDestino - 2 & " registros normalizados."
+
+End Sub
