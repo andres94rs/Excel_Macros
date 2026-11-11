@@ -1,1 +1,167 @@
+Código:
 
+Sub Grabar()
+
+Dim wbOrigen As Workbook
+Dim wbDestino As Workbook
+Dim Abierto As Boolean
+
+Dim n As Long
+
+Dim Fecha As Variant
+Dim Hora As Variant
+Dim SP As Variant
+
+Dim Analisis As String
+Dim Valor As String
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Set wbOrigen = ThisWorkbook
+
+    '=================================
+    ' VALIDAR FECHA Y HORA
+    '=================================
+
+    If Trim(wbOrigen.Sheets("Datos").Range("B7").Text) = "" Then
+        MsgBox "Debe introducir una fecha.", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    If Trim(wbOrigen.Sheets("Datos").Range("C7").Text) = "" Then
+        MsgBox "Debe introducir una hora.", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    If wbOrigen.Sheets("Datos").Range("B7").Text <> _
+       Format(wbOrigen.Sheets("Datos").Range("B7").Value, "dd/mm/yyyy") Then
+
+        MsgBox "La fecha debe introducirse en formato DD/MM/AAAA.", _
+               vbExclamation, "Formato incorrecto"
+        Exit Sub
+
+    End If
+
+    If wbOrigen.Sheets("Datos").Range("C7").Text <> _
+       Format(wbOrigen.Sheets("Datos").Range("C7").Value, "hh:mm:ss") Then
+
+        MsgBox "La hora debe introducirse en formato HH:MM:SS.", _
+               vbExclamation, "Formato incorrecto"
+        Exit Sub
+
+    End If
+
+    '=================================
+    ' VALIDAR ANALISIS (SIN COMAS)
+    '=================================
+
+    For n = 5 To 9 'Columnas E a I
+
+        Valor = Trim(CStr(wbOrigen.Sheets("Datos").Cells(7, n).Value))
+
+        If InStr(Valor, ",") > 0 Then
+
+            MsgBox "No se permiten comas (,) en los resultados de análisis." & vbCrLf & _
+                   "Revise la celda " & wbOrigen.Sheets("Datos").Cells(7, n).Address(False, False), _
+                   vbExclamation, "Formato incorrecto"
+
+            Exit Sub
+
+        End If
+
+    Next n
+
+    On Error Resume Next
+    Set wbDestino = Workbooks("SP2026-Registro.xlsm")
+    On Error GoTo 0
+
+    If wbDestino Is Nothing Then
+
+        Set wbDestino = Workbooks.Open( _
+        "I:\Producción\Control Procesos\SP2026-Registro.xlsm")
+
+        Abierto = False
+
+    Else
+
+        Abierto = True
+
+    End If
+
+    '=================================
+    ' GRABAR EN REGISTRO
+    '=================================
+
+    With wbDestino.Sheets("Registro")
+
+        .Rows(3).Insert Shift:=xlDown
+
+        .Range("A3:H3").Value = _
+        wbOrigen.Sheets("Datos").Range("B7:I7").Value
+
+        .Range("I3:M3").Value = _
+        wbOrigen.Sheets("Datos").Range("E6:I6").Value
+
+    End With
+
+    '=================================
+    ' DATOS DE CABECERA
+    '=================================
+
+    Fecha = wbOrigen.Sheets("Datos").Range("B7").Value
+    Hora = wbOrigen.Sheets("Datos").Range("C7").Value
+    SP = wbOrigen.Sheets("Datos").Range("D7").Value
+
+    '=================================
+    ' GRABAR EN NORMALIZADA
+    '=================================
+
+    With wbDestino.Sheets("Normalizada")
+
+        For n = 4 To 0 Step -1
+
+            Analisis = Trim(CStr(wbOrigen.Sheets("Datos").Cells(6, 5 + n).Value))
+            Valor = Trim(CStr(wbOrigen.Sheets("Datos").Cells(7, 5 + n).Value))
+
+            If Valor <> "" _
+            And Valor <> "-" _
+            And Analisis <> "" _
+            And Analisis <> "-" Then
+
+                .Rows(3).Insert Shift:=xlDown
+
+                .Cells(3, 1).Value = Fecha
+                .Cells(3, 2).Value = Hora
+                .Cells(3, 3).Value = SP
+                .Cells(3, 4).Value = Analisis
+                .Cells(3, 5).Value = Valor
+
+            End If
+
+        Next n
+
+    End With
+
+    '=================================
+    ' GUARDAR
+    '=================================
+
+    wbDestino.Save
+
+    If Not Abierto Then
+        wbDestino.Close SaveChanges:=False
+    End If
+
+    '=================================
+    ' LIMPIAR VALORES
+    '=================================
+
+    wbOrigen.Sheets("Datos").Range("E7:I7").ClearContents
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    MsgBox "Datos grabados correctamente."
+
+End Sub
